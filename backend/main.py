@@ -33,7 +33,7 @@ origins = [
     "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "https://mech-frontend.vercel.app/"
+    "https://mech-frontend.vercel.app"
 ]
 
 app.add_middleware(
