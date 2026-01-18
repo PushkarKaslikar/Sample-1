@@ -1,33 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, Bug } from 'lucide-react';
+import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
-// Typewriter component for the streaming effect
-const Typewriter = ({ text, onComplete }) => {
-    const [displayedText, setDisplayedText] = useState('');
-    const indexRef = useRef(0);
 
-    useEffect(() => {
-        // Reset if text changes (though typically it won't for a specific message instance)
-        setDisplayedText('');
-        indexRef.current = 0;
-
-        const intervalId = setInterval(() => {
-            if (indexRef.current < text.length) {
-                setDisplayedText((prev) => prev + text.charAt(indexRef.current));
-                indexRef.current += 1;
-            } else {
-                clearInterval(intervalId);
-                onComplete && onComplete();
-            }
-        }, 15); // Adjust speed: 15ms is roughly 60fps-ish typing
-
-        return () => clearInterval(intervalId);
-    }, [text, onComplete]);
-
-    return <span className="whitespace-pre-wrap leading-relaxed">{displayedText}</span>;
-};
 
 const Chatbot = () => {
     const [messages, setMessages] = useState([
@@ -60,36 +36,7 @@ const Chatbot = () => {
         }
     }, [apiKey]);
 
-    // Debugging function to check available models
-    const checkModels = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get("https://openrouter.ai/api/v1/models", {
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`
-                }
-            });
-            console.log("Models:", response.data);
 
-            const freeModels = response.data.data
-                .filter(m => m.id.includes('free'))
-                .map(m => m.id);
-
-            const message = `Found ${response.data.data.length} models. Free models: ${freeModels.join(', ')}`;
-            // Debug messages don't need animation
-            setMessages(prev => [...prev, { role: 'assistant', content: "DEBUG: " + message, animate: false }]);
-
-        } catch (error) {
-            console.error("Model Check Error:", error);
-            let errMsg = error.message;
-            if (error.response) {
-                errMsg = `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`;
-            }
-            setMessages(prev => [...prev, { role: 'assistant', content: "DEBUG ERROR: " + errMsg, animate: false }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -108,7 +55,7 @@ const Chatbot = () => {
             const response = await axios.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 {
-                    model: "deepseek/deepseek-r1",
+                    model: "meta-llama/llama-3.2-3b-instruct:free",
                     messages: [
                         ...messages.map(m => ({ role: m.role, content: m.content })),
                         userMessage
@@ -116,9 +63,7 @@ const Chatbot = () => {
                 },
                 {
                     headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "HTTP-Referer": window.location.origin,
-                        "X-Title": "Mechtron Chatbot",
+                        "Authorization": `Bearer ${apiKey.replace(/['"]+/g, '').trim()}`,
                         "Content-Type": "application/json"
                     }
                 }
@@ -179,11 +124,7 @@ const Chatbot = () => {
                                     ? 'bg-blue-600 text-white rounded-tr-none'
                                     : 'bg-slate-800 text-gray-100 rounded-tl-none border border-white/10'
                                     }`}>
-                                    {msg.role === 'assistant' && msg.animate ? (
-                                        <Typewriter text={msg.content} onComplete={() => scrollToBottom()} />
-                                    ) : (
-                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                                    )}
+                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                                 </div>
                             </div>
                         </div>
@@ -209,14 +150,7 @@ const Chatbot = () => {
                 {/* Input Area */}
                 <div className="border-t border-white/10 bg-slate-950 p-4">
                     <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-                        <button
-                            type="button"
-                            onClick={checkModels}
-                            className="p-3 rounded-xl bg-slate-800 text-gray-400 hover:text-yellow-400 transition-colors mr-2"
-                            title="Debug: Check available models"
-                        >
-                            <Bug className="w-5 h-5" />
-                        </button>
+
                         <input
                             type="text"
                             value={input}
