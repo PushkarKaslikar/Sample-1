@@ -22,6 +22,15 @@ const Chatbot = () => {
         scrollToBottom();
     }, [messages, isLoading]);
 
+    useEffect(() => {
+        const key = process.env.REACT_APP_OPENROUTER_API_KEY || '';
+        if (key) {
+            console.log(`DEBUG: Key loaded. Starts with: ${key.substring(0, 10)}... Length: ${key.length}`);
+        } else {
+            console.error("DEBUG: Key is EMPTY/MISSING");
+        }
+    }, [apiKey]);
+
     // Debugging: Check if API Key is loaded
     useEffect(() => {
         if (!apiKey) {
