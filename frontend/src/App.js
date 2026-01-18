@@ -9,6 +9,8 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentFiles from './pages/StudentFiles';
 import TeacherFiles from './pages/TeacherFiles';
 import Lathe3DModel from './pages/Lathe3DModel';
+import Chatbot from './pages/Chatbot';
+import Vmc3dModel from './pages/Vmc3dModel';
 
 
 // Context and Constants
@@ -96,6 +98,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Lathe3DModel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chatbot"
+            element={
+              <ProtectedRoute>
+                <Chatbot />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vmc-3d"
+            element={
+              <ProtectedRoute>
+                <Vmc3dModel />
               </ProtectedRoute>
             }
           />

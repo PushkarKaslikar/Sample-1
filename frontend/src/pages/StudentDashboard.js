@@ -87,11 +87,12 @@ function StudentDashboard() {
         </div>
 
         {/* Interactive Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+        {/* Interactive Action Buttons - Updated grid for 4 items */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
 
           {/* Chatbot Button */}
           <button
-            onClick={openGemini}
+            onClick={() => navigate('/chatbot')}
             className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-2xl hover:shadow-cyan-500/20 transform hover:-translate-y-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-cyan-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -102,7 +103,7 @@ function StudentDashboard() {
             </span>
           </button>
 
-          {/* ✅ 3D Model Button — ROUTING ADDED ONLY */}
+          {/* CNC 3D Model Button (Renamed from 3D Models) */}
           <button
             onClick={() => navigate('/lathe-3d')}
             className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-purple-400 hover:bg-purple-500/10 hover:shadow-2xl hover:shadow-purple-500/20 transform hover:-translate-y-2"
@@ -111,7 +112,20 @@ function StudentDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
             <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              3D Models
+              CNC 3D Model
+            </span>
+          </button>
+
+          {/* VMC 3D Model Button (New) */}
+          <button
+            onClick={() => navigate('/vmc-3d')}
+            className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-pink-400 hover:bg-pink-500/10 hover:shadow-2xl hover:shadow-pink-500/20 transform hover:-translate-y-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-pink-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              VMC 3D Model
             </span>
           </button>
 

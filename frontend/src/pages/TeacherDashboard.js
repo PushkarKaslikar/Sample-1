@@ -92,7 +92,7 @@ function TeacherDashboard() {
 
           {/* Chatbot Button */}
           <button
-            onClick={openGemini}
+            onClick={() => navigate('/chatbot')}
             className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-2xl hover:shadow-cyan-500/20 transform hover:-translate-y-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-cyan-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
