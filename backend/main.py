@@ -33,14 +33,7 @@ def get_db():
         db.close()
 
 # CORS Configuration
-origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-    "https://mech-frontend.vercel.app",
-    "https://mech-frontend-git-main-pushkar-kaslikars-projects.vercel.app" 
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
