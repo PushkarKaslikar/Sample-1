@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body
-import requests
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -148,7 +148,7 @@ async def chat_proxy(request: ChatRequest):
     api_key = api_key.strip().replace('"', '').replace("'", "")
     print(f"Using API Key: {api_key[:10]}... (Length: {len(api_key)})")
 
-    # List of free models to try in order of preference (Verified via script)
+    # List of free models to try in order of preference
     models_to_try = [
         "google/gemini-2.0-flash-exp:free",
         "meta-llama/llama-3.3-70b-instruct:free",
@@ -157,38 +157,49 @@ async def chat_proxy(request: ChatRequest):
     ]
     
     last_error = None
-    
+    import urllib.request
+    import json
+
     for model in models_to_try:
         try:
             print(f"Attempting Chat with model: {model}")
-            response = requests.post(
+            
+            payload = {
+                "model": model,
+                "messages": request.messages
+            }
+            data = json.dumps(payload).encode('utf-8')
+            
+            req = urllib.request.Request(
                 "https://openrouter.ai/api/v1/chat/completions",
+                data=data,
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost:3000", # Optional but good practice
+                    "HTTP-Referer": "http://localhost:3000"
                 },
-                json={
-                    "model": model,
-                    "messages": request.messages
-                },
-                timeout=30
+                method="POST"
             )
             
-            if response.status_code == 200:
-                print(f"Success connecting to {model}")
-                return response.json()
-            else:
-                print(f"Model {model} failed with status: {response.status_code}")
-                # Save error detail but continue to next model
-                try:
-                    error_json = response.json()
-                    last_error = error_json.get("error", {}).get("message", response.text)
-                except:
-                    last_error = response.text
-                continue
-                
-        except requests.exceptions.RequestException as e:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                if response.status == 200:
+                    print(f"Success connecting to {model}")
+                    return json.loads(response.read().decode('utf-8'))
+                else:
+                    # Should not be reached as urlopen raises HTTPError for non-2xx
+                    print(f"Model {model} failed with status: {response.status}")
+                    continue
+                    
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8')
+            print(f"HTTP Error with {model}: {e.code} - {error_body}")
+            try:
+                error_json = json.loads(error_body)
+                last_error = error_json.get("error", {}).get("message", error_body)
+            except:
+                last_error = error_body
+            continue
+        except Exception as e:
             print(f"Network error with {model}: {e}")
             last_error = str(e)
             continue
