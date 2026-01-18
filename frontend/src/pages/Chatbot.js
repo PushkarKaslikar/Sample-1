@@ -2,15 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-
-
+import { API } from '../App';
 
 const Chatbot = () => {
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hello! I am your AI assistant. How can I help you today?', animate: false }
     ]);
     const [input, setInput] = useState('');
-    const [apiKey] = useState(process.env.REACT_APP_OPENROUTER_API_KEY || '');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
@@ -22,38 +20,9 @@ const Chatbot = () => {
         scrollToBottom();
     }, [messages, isLoading]);
 
-    useEffect(() => {
-        const key = process.env.REACT_APP_OPENROUTER_API_KEY || '';
-        if (key) {
-            console.log(`DEBUG: Key loaded. Starts with: ${key.substring(0, 10)}... Length: ${key.length}`);
-        } else {
-            console.error("DEBUG: Key is EMPTY/MISSING");
-        }
-    }, [apiKey]);
-
-    // Debugging: Check if API Key is loaded
-    useEffect(() => {
-        if (!apiKey) {
-            console.error("CRITICAL: REACT_APP_OPENROUTER_API_KEY is missing!");
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: "⚠️ **Configuration Error**: `REACT_APP_OPENROUTER_API_KEY` is missing.\n\nPlease go to Vercel -> Settings -> Environment Variables and ensure it is set exactly with that name, then Redeploy.",
-                animate: false
-            }]);
-        } else {
-            console.log("API Key loaded successfully. Length:", apiKey.length);
-        }
-    }, [apiKey]);
-
-
-
     const handleSend = async (e) => {
         e.preventDefault();
         if (!input.trim()) return;
-        if (!apiKey) {
-            toast.error("API Key is missing.");
-            return;
-        }
 
         const userMessage = { role: 'user', content: input, animate: false };
         setMessages(prev => [...prev, userMessage]);
@@ -62,19 +31,12 @@ const Chatbot = () => {
 
         try {
             const response = await axios.post(
-                "https://openrouter.ai/api/v1/chat/completions",
+                `${API}/api/chat`,
                 {
-                    model: "meta-llama/llama-3.2-3b-instruct:free",
                     messages: [
                         ...messages.map(m => ({ role: m.role, content: m.content })),
                         userMessage
                     ]
-                },
-                {
-                    headers: {
-                        "Authorization": `Bearer ${apiKey.replace(/['"]+/g, '').trim()}`,
-                        "Content-Type": "application/json"
-                    }
                 }
             );
 
@@ -83,7 +45,7 @@ const Chatbot = () => {
             const botMessage = {
                 role: 'assistant',
                 content: botContent,
-                animate: true // Enable animation for new messages
+                animate: false
             };
 
             setMessages(prev => [...prev, botMessage]);
@@ -92,10 +54,7 @@ const Chatbot = () => {
 
             let errorMessage = "An error occurred.";
             if (error.response) {
-                errorMessage = error.response.data?.error?.message || `Error: ${error.response.status}`;
-                if (error.response.status === 404) {
-                    errorMessage += " (Model not found or API endpoint error)";
-                }
+                errorMessage = error.response.data?.detail || `Error: ${error.response.status}`;
             } else if (error.request) {
                 errorMessage = "No response received from server.";
             } else {
@@ -159,7 +118,6 @@ const Chatbot = () => {
                 {/* Input Area */}
                 <div className="border-t border-white/10 bg-slate-950 p-4">
                     <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-
                         <input
                             type="text"
                             value={input}

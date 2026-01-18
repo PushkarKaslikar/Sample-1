@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body
+import requests
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -61,6 +62,10 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+class ChatRequest(BaseModel):
+    messages: List[dict]
+
 
 class UserResponse(BaseModel):
     name: str
@@ -133,6 +138,38 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         )
         
     return db_user
+
+# Chat Endpoint
+@app.post("/api/chat")
+async def chat_proxy(request: ChatRequest):
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Server misconfiguration: API Key missing")
+
+    try:
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "meta-llama/llama-3.2-3b-instruct:free",
+                "messages": request.messages
+            },
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+             # Pass through the error from OpenRouter
+             raise HTTPException(status_code=response.status_code, detail=response.text)
+             
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Chat Proxy Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # File Endpoints
 from fastapi.responses import StreamingResponse
