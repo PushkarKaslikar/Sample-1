@@ -1,5 +1,9 @@
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -144,31 +148,64 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
 async def chat_proxy(request: ChatRequest):
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
+        print("Error: OPENROUTER_API_KEY not found in environment.")
         raise HTTPException(status_code=500, detail="Server misconfiguration: API Key missing")
 
-    try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "meta-llama/llama-3.2-3b-instruct:free",
-                "messages": request.messages
-            },
-            timeout=30
-        )
-        
-        if response.status_code != 200:
-             # Pass through the error from OpenRouter
-             raise HTTPException(status_code=response.status_code, detail=response.text)
-             
-        return response.json()
-        
-    except requests.exceptions.RequestException as e:
-        print(f"Chat Proxy Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    # Sanitize key (remove quotes/whitespace)
+    api_key = api_key.strip().replace('"', '').replace("'", "")
+    print(f"Using API Key: {api_key[:10]}... (Length: {len(api_key)})")
+
+    # List of free models to try in order of preference (Verified via script)
+    models_to_try = [
+        "google/gemini-2.0-flash-exp:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "qwen/qwen-2.5-vl-7b-instruct:free",
+        "meta-llama/llama-3.1-405b-instruct:free"
+    ]
+    
+    last_error = None
+    
+    for model in models_to_try:
+        try:
+            print(f"Attempting Chat with model: {model}")
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "http://localhost:3000", # Optional but good practice
+                },
+                json={
+                    "model": model,
+                    "messages": request.messages
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                print(f"Success connecting to {model}")
+                return response.json()
+            else:
+                print(f"Model {model} failed with status: {response.status_code}")
+                # Save error detail but continue to next model
+                try:
+                    error_json = response.json()
+                    last_error = error_json.get("error", {}).get("message", response.text)
+                except:
+                    last_error = response.text
+                continue
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Network error with {model}: {e}")
+            last_error = str(e)
+            continue
+            
+    # If loop finishes, all models failed
+    print("All models failed.")
+    raise HTTPException(
+        status_code=503, 
+        detail=f"All AI models are currently busy or unavailable. Last error: {last_error}"
+    )
 
 
 # File Endpoints
