@@ -34,7 +34,7 @@ const Chatbot = () => {
         { role: 'assistant', content: 'Hello! I am your AI assistant. How can I help you today?', animate: false }
     ]);
     const [input, setInput] = useState('');
-    const [apiKey] = useState('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');
+    const [apiKey] = useState(process.env.REACT_APP_OPENROUTER_API_KEY || '');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
@@ -45,6 +45,20 @@ const Chatbot = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    // Debugging: Check if API Key is loaded
+    useEffect(() => {
+        if (!apiKey) {
+            console.error("CRITICAL: REACT_APP_OPENROUTER_API_KEY is missing!");
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: "⚠️ **Configuration Error**: `REACT_APP_OPENROUTER_API_KEY` is missing.\n\nPlease go to Vercel -> Settings -> Environment Variables and ensure it is set exactly with that name, then Redeploy.",
+                animate: false
+            }]);
+        } else {
+            console.log("API Key loaded successfully. Length:", apiKey.length);
+        }
+    }, [apiKey]);
 
     // Debugging function to check available models
     const checkModels = async () => {
