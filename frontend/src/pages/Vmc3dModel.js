@@ -3,51 +3,57 @@ import React, { useState } from 'react';
 const LATHE_COMPONENTS = [
     {
         id: 1,
-        name: "Control Panel (CNC Controller)",
-        description: "Control Panel is known as the Brain of CNC machine. It is used to execute or run CNC programs written using G-Codes And M-codes. Operators can control whole machine processes using this control panel. Spindle speed, Feed rate, tool movements, and other machine operations were controlled using Control Panel. It also displays machine status, error messages and operation time. The control panel is essential because it allows us to accurate and automated control of the machine processes. ",
-        image: "./images/control_panel.png"
+        name: "Control Panel",
+        description: "The control panel is the main controlling unit of the VMC machine. It is used to input programs, control spindle speed, Feed rate, Tool movements and monitor machine status. The control panel displays coordinates and machining parameters. It plays a important role in automation and accurate control of machine operation.",
+        image: "./images/vmc_control_panel.png"
     },
     {
         id: 2,
         name: "Spindle",
-        description: "Spindle is the rotating component that drives the chuck and the workpiece. It rotates at different speed which can be controlled by using control panel programs. The spindle speed directly affects on the cutting quality and surface finish after the operation done. The spindle is important because it provide necessary rotational movements which required for different operations.",
-        image: "./images/spindle.png"
+        description: "The spindle is a rotating components that holds and drives the cutting tool. In a VMC, the spindle is vertically oriented and rotates at high speed to perform operations such as milling, drilling and tapping. The spindle speed directly affects cutting performance, accuracy and surface finish.",
+        image: "./images/vmc_spindle.png"
     },
     {
         id: 3,
-        name: "Chuck",
-        description: "Chuck is the mounted on the spindle and it only use to hold the workpiece properly during machining operations. Mostly the Three-jaw and Four-jaw type of chuck is used. A properly clamped workpiece ensures accurate machining and prevents slippage during operations. The chuck is essential for maintaining safety during operations.",
-        image: "./images/chuck.png"
+        name: "Tool Magazine / Automatic Tool Changer (ACT)",
+        description: "The Tool magazine stores multiple cutting tools and automatically changes them during machining as per the CNC program. The Automatic tool changer reduces manual intervention and machine time. It increases productivity by enabling multiple operation in a single setup.",
+        image: "./images/ACT.png"
     },
     {
         id: 4,
-        name: "Tool post or Tool Turret",
-        description: "The Tool post is use to hold one or more cutting tools. In CNC machines, The turret automatically indexes and changes the tools as per the program is given. This allows multiple operations which requires different tools are performed without manual efforts. The tool turret improves the productivity and working efficiency as well as reduces the worker fatigue.",
-        image: "./images/tool_post.png"
+        name: "Machine Table",
+        description: "The machine table is used to mount and hold the workpiece securely using fixtures or clamps.it moves along the X and Y axes to position the workpiece accurately under the cutting tool. Proper clamping on the table ensures machining accuracy and safety of the operator.",
+        image: "./images/machine_table.png"
     },
     {
         id: 5,
-        name: "Bed",
-        description: "Bed is the base structure of the CNC machine. It supports all the major components such as headstock, Tailstock, and Carriage. The bed provide rigid base and maintain alignment of machine parts. A strong and rigid bed is necessary to reduce the vibration causing during operations and ensure the accurate machining.",
-        image: "./images/bed.png"
+        name: "Column",
+        description: "The Column is the vertical structural component that supports the spindle head. It is Rigid and aligned for vertical movements along the Z axis. A strong column is essential to reduce the vibration during the operation and maintain the machining accuracy.",
+        image: "./images/column.png"
     },
     {
         id: 6,
-        name: "Carriage",
-        description: "The carriage moves all along the bed and carries the cutting tools during machining. It allows  controlled movement of the tool in longitudinal and transverse direction. The carriage is fully driven by Servo Motors for precise positioning. It plays important role in shaping the workpiece accurately.",
-        image: "./images/carriage.png"
+        name: "Bed / Base",
+        description: "The Base (Bed) is the foundation of the VMC machine. It supports all the major/minor components such as column, table and spindle assembly. The base provide rigid and strong support also absorbs vibrations generated during machining, maintaining stability.",
+        image: "./images/bed.png"
     },
     {
         id: 7,
-        name: "Tailstock",
-        description: "The tailstock is located at the opposite side of the headstock and is used to support long workpieces. It can also hold drilling and boring tools. The tailstock improves stability of workpiece while being machining. And prevents bending of workpiece during operations.",
-        image: "./images/tailstock.png"
+        name: "Coolant System",
+        description: "Coolant system is the one of the most important component in VMC machines. It supply coolant to cutting zone to reduce heat, improve surface finish and extend tool life reducing the extra wear of tools. It also help in flushing away the cheap generated during machining operations.",
+        image: "./images/coolant.png"
     },
     {
         id: 8,
-        name: "Safety Enclosure (Body)",
-        description: "The safety enclosure is the main outer body of the machine which surrounds the machine area to protect the operator form falling chips, coolant splashes, and accidental contact caused by the moving parts. It is an important safety feature that completely ensure the safety and compliance with industrial safety standards.",
-        image: "./images/safety.png"
+        name: "Linear Guideways",
+        description: "Linear guideways provide smooth and accurate coordinated movement of the table saddle and spindle head along the different axis. They reduce the friction and improves the precision positioning, which is critical for high-accuracy machining.",
+        image: "./images/linear_guideways.png"
+    },
+    {
+        id: 9,
+        name: "Safety Enclosure",
+        description: "The safety enclosure surrounds the machining area and protects the operator from flying chip material formed during operations also rotating tools and coolant splashes. It ensures safe operation.",
+        image: "./images/vmc_safety_enclosure.png"
     }
 ];
 
@@ -64,55 +70,47 @@ const FLOW_STEPS = [
 
 const DOS = [
     {
-        title: "Wear Proper Safety Equipment",
-        description: "Always wear safety goggles, safety shoes, and protective clothing before operating the CNC lathe to protect against chips and coolant splashes."
+        title: "Proper Fixture Clamping",
+        description: "Ensure proper fixture clamping on the machine table."
     },
     {
-        title: "Check Workpiece Clamping",
-        description: "Ensure the workpiece is properly and firmly clamped in the chuck before starting the machine to avoid vibration or ejection."
+        title: "Check Tool Length Offset",
+        description: "Check tool length offset (Z-offset) before machining."
     },
     {
-        title: "Verify CNC Program Before Execution",
-        description: "Always check the CNC program for correct G-codes, tool paths, spindle speed, and feed rate before running the machine."
+        title: "Confirm Tool Magazine/ATC",
+        description: "Confirm tool magazine and ATC operation."
     },
     {
-        title: "Perform Dry Run",
-        description: "Run the program in dry-run or simulation mode to confirm tool movement and avoid collisions."
+        title: "Remove Measuring Tools",
+        description: "Remove all measuring tools from the table before cycle start."
     },
     {
-        title: "Keep Machine Area Clean",
-        description: "Maintain cleanliness around the machine to prevent accidents and ensure smooth operation."
-    },
-    {
-        title: "Use Proper Cutting Tools",
-        description: "Select the correct tool type and tool holder for the machining operation to achieve good surface finish and tool life."
+        title: "Correct Coolant Direction",
+        description: "Use correct coolant direction for vertical cutting."
     }
 ];
 
 const DONTS = [
     {
-        title: "Do Not Touch Rotating Parts",
-        description: "Never touch the rotating chuck, spindle, or workpiece while the machine is running."
+        title: "Hands Inside Machine",
+        description: "Do not place hands inside the machine during tool change."
     },
     {
-        title: "Do Not Leave Chuck Key in Chuck",
-        description: "Always remove the chuck key after tightening to avoid serious accidents."
+        title: "Limits",
+        description: "Do not exceed tool length or spindle load limits."
     },
     {
-        title: "Do Not Change Tools During Operation",
-        description: "Tool changes should only be done when the machine is completely stopped."
+        title: "Loose Items",
+        description: "Do not leave loose bolts or fixtures on the table."
     },
     {
-        title: "Do Not Open Safety Door While Running",
-        description: "Never open the safety enclosure door during machining, as chips and coolant can cause injury."
+        title: "Safety Interlocks",
+        description: "Do not bypass door interlocks."
     },
     {
-        title: "Do Not Use Incorrect Parameters",
-        description: "Avoid using incorrect spindle speed or feed rate, as it can damage tools and workpieces."
-    },
-    {
-        title: "Do Not Ignore Alarms or Warnings",
-        description: "Never ignore machine alarms or error messages; stop the machine and identify the issue."
+        title: "Work Offset",
+        description: "Do not run program without setting work offset."
     }
 ];
 
@@ -250,7 +248,7 @@ function Vmc3dModel() {
                     {/* DOS Section */}
                     <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-6 md:p-8">
                         <h2 className="text-3xl font-bold mb-8 text-center text-green-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                            DOs of CNC Lathe
+                            DOs of VMC Machine
                         </h2>
                         <div className="space-y-6">
                             {DOS.map((item, index) => (
@@ -276,7 +274,7 @@ function Vmc3dModel() {
                     {/* DONTS Section */}
                     <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 md:p-8">
                         <h2 className="text-3xl font-bold mb-8 text-center text-red-400" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                            DON'Ts of CNC Lathe
+                            DON'Ts of VMC Machine
                         </h2>
                         <div className="space-y-6">
                             {DONTS.map((item, index) => (
