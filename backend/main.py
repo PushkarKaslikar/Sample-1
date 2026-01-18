@@ -33,7 +33,8 @@ origins = [
     "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "https://mech-frontend.vercel.app"
+    "https://mech-frontend.vercel.app",
+    "https://mech-frontend-git-main-pushkar-kaslikars-projects.vercel.app" 
 ]
 
 app.add_middleware(
@@ -67,7 +68,7 @@ class UserResponse(BaseModel):
     role: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Helper Functions
 # Use pbkdf2_sha256 which is pure python and robust on Windows
