@@ -1,3 +1,4 @@
+# VERSION: 2.0-NO-REQUESTS
 from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body
 
 from dotenv import load_dotenv
@@ -60,9 +61,7 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
-class ChatRequest(BaseModel):
-    messages: List[dict]
-
+# Chat Bot Logic Removed (Moved to Frontend)
 
 class UserResponse(BaseModel):
     name: str
@@ -136,83 +135,6 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         
     return db_user
 
-# Chat Endpoint
-@app.post("/api/chat")
-async def chat_proxy(request: ChatRequest):
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        print("Error: OPENROUTER_API_KEY not found in environment.")
-        raise HTTPException(status_code=500, detail="Server misconfiguration: API Key missing")
-
-    # Sanitize key (remove quotes/whitespace)
-    api_key = api_key.strip().replace('"', '').replace("'", "")
-    print(f"Using API Key: {api_key[:10]}... (Length: {len(api_key)})")
-
-    # List of free models to try in order of preference
-    models_to_try = [
-        "google/gemini-2.0-flash-exp:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-vl-7b-instruct:free",
-        "meta-llama/llama-3.1-405b-instruct:free"
-    ]
-    
-    last_error = None
-    import urllib.request
-    import json
-
-    for model in models_to_try:
-        try:
-            print(f"Attempting Chat with model: {model}")
-            
-            payload = {
-                "model": model,
-                "messages": request.messages
-            }
-            data = json.dumps(payload).encode('utf-8')
-            
-            req = urllib.request.Request(
-                "https://openrouter.ai/api/v1/chat/completions",
-                data=data,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost:3000"
-                },
-                method="POST"
-            )
-            
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    print(f"Success connecting to {model}")
-                    return json.loads(response.read().decode('utf-8'))
-                else:
-                    # Should not be reached as urlopen raises HTTPError for non-2xx
-                    print(f"Model {model} failed with status: {response.status}")
-                    continue
-                    
-        except urllib.error.HTTPError as e:
-            error_body = e.read().decode('utf-8')
-            print(f"HTTP Error with {model}: {e.code} - {error_body}")
-            try:
-                error_json = json.loads(error_body)
-                last_error = error_json.get("error", {}).get("message", error_body)
-            except:
-                last_error = error_body
-            continue
-        except Exception as e:
-            print(f"Network error with {model}: {e}")
-            last_error = str(e)
-            continue
-            
-    # If loop finishes, all models failed
-    print("All models failed.")
-    raise HTTPException(
-        status_code=503, 
-        detail=f"All AI models are currently busy or unavailable. Last error: {last_error}"
-    )
-
-
-# File Endpoints
 from fastapi.responses import StreamingResponse
 import io
 from fastapi import Form

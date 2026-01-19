@@ -1,140 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import axios from 'axios';
-import { API } from '../App';
+import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
 const Chatbot = () => {
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: 'Hello! I am your AI assistant. How can I help you today?', animate: false }
-    ]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const messagesEndRef = useRef(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, isLoading]);
-
-    const handleSend = async (e) => {
-        e.preventDefault();
-        if (!input.trim()) return;
-
-        const userMessage = { role: 'user', content: input, animate: false };
-        setMessages(prev => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            const response = await axios.post(
-                `${API}/api/chat`,
-                {
-                    messages: [
-                        ...messages.map(m => ({ role: m.role, content: m.content })),
-                        userMessage
-                    ]
-                }
-            );
-
-            const botContent = response.data.choices?.[0]?.message?.content || "I couldn't generate a response.";
-
-            const botMessage = {
-                role: 'assistant',
-                content: botContent,
-                animate: false
-            };
-
-            setMessages(prev => [...prev, botMessage]);
-        } catch (error) {
-            console.error("Chat Error:", error);
-
-            let errorMessage = "An error occurred.";
-            if (error.response) {
-                errorMessage = error.response.data?.detail || `Error: ${error.response.status}`;
-            } else if (error.request) {
-                errorMessage = "No response received from server.";
-            } else {
-                errorMessage = error.message;
-            }
-
-            toast.error(errorMessage);
-            setMessages(prev => [...prev, { role: 'assistant', content: `Sorry, something went wrong: ${errorMessage}`, animate: false }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return (
-        <div className="flex h-[calc(100vh-64px)] bg-slate-900 text-white mt-16 overflow-hidden">
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col h-full relative">
+        <div className="flex h-[calc(100vh-64px)] bg-slate-900 mt-16 overflow-hidden relative">
+            <iframe
+                src="https://chat.deepseek.com/"
+                title="DeepSeek"
+                className="w-full h-full border-0"
+                allow="microphone"
+            />
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
-                    {messages.map((msg, idx) => (
-                        <div
-                            key={idx}
-                            className={`flex gap-4 max-w-3xl mx-auto ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            <div className={`flex flex-col max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                <div className={`flex items-center gap-2 mb-1 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-blue-600' : 'bg-green-600'}`}>
-                                        {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                                    </div>
-                                    <span className="text-xs text-gray-400 capitalize">{msg.role}</span>
-                                </div>
+            {/* Fallback / Overlay Button in case the iframe is blocked */}
+            <div className="absolute top-4 right-4 z-50">
+                <a
+                    href="https://chat.deepseek.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-white/20 shadow-lg transition-colors text-sm"
+                >
+                    <ExternalLink className="w-4 h-4" />
+                    Open DeepSeek
+                </a>
+            </div>
 
-                                <div className={`p-4 rounded-2xl ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-slate-800 text-gray-100 rounded-tl-none border border-white/10'
-                                    }`}>
-                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex gap-4 max-w-3xl mx-auto justify-start">
-                            <div className="flex flex-col items-start">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-                                        <Bot className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs text-gray-400">Assistant</span>
-                                </div>
-                                <div className="bg-slate-800 text-gray-100 rounded-2xl rounded-tl-none border border-white/10 p-4">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input Area */}
-                <div className="border-t border-white/10 bg-slate-950 p-4">
-                    <form onSubmit={handleSend} className="max-w-3xl mx-auto flex gap-4">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type your message..."
-                            className="flex-1 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-500"
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            disabled={isLoading || !input.trim()}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 rounded-xl transition-colors flex items-center justify-center"
-                        >
-                            <Send className="w-5 h-5" />
-                        </button>
-                    </form>
-                </div>
+            <div className="absolute top-4 left-4 z-40 pointer-events-none bg-black/50 p-2 rounded text-xs text-white/50">
+                Note: DeepSeek may block embedding. Use button if blank.
             </div>
         </div>
     );
