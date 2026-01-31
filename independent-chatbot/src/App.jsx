@@ -36,10 +36,12 @@ function App() {
         setIsLoading(true);
 
         const modelsToTry = [
-            "google/gemini-2.0-flash-exp:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "qwen/qwen-2.5-vl-7b-instruct:free",
-            "meta-llama/llama-3.1-405b-instruct:free"
+            "google/gemma-3-12b-it:free",              // Verified available
+            "meta-llama/llama-3.3-70b-instruct:free",  // Verified available
+            "meta-llama/llama-3.2-3b-instruct:free",   // Verified available
+            "mistralai/mistral-small-3.1-24b-instruct:free", // Verified available
+            "qwen/qwen-2.5-vl-7b-instruct:free",       // Verified available
+            "nvidia/nemotron-3-nano-30b-a3b:free"      // Verified available
         ];
 
         let lastError = null;
@@ -73,7 +75,10 @@ function App() {
                 return; // Success! Exit loop
 
             } catch (error) {
-                console.warn(`Failed with ${model}:`, error);
+                console.warn(`Failed with ${model}:`, error.message);
+                if (error.response) {
+                    console.warn("Error details:", error.response.data);
+                }
                 lastError = error;
                 // Continue to next model
             }
