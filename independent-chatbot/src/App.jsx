@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import axios from 'axios';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function App() {
     const [messages, setMessages] = useState([
@@ -23,8 +27,7 @@ function App() {
         e.preventDefault();
         if (!input.trim()) return;
 
-        // Use VITE_ prefix for Vite environment variables
-        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
             toast.error("API Key is missing. Please check .env file.");
             return;
@@ -35,83 +38,75 @@ function App() {
         setInput('');
         setIsLoading(true);
 
-        const modelsToTry = [
-            "google/gemma-3-12b-it:free",              // Verified available
-            "meta-llama/llama-3.3-70b-instruct:free",  // Verified available
-            "meta-llama/llama-3.2-3b-instruct:free",   // Verified available
-            "mistralai/mistral-small-3.1-24b-instruct:free", // Verified available
-            "qwen/qwen-2.5-vl-7b-instruct:free",       // Verified available
-            "nvidia/nemotron-3-nano-30b-a3b:free"      // Verified available
-        ];
+        try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-        let lastError = null;
+            // Convert history to Gemini format
+            let history = messages
+                .filter(m => m.role !== 'system')
+                .map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                }));
 
-        for (const model of modelsToTry) {
-            try {
-                // console.log(`Attempting with model: ${model}`); // Optional debug
-
-                let apiMessages = [];
-                // Google models (Gemma/Gemini) often error with "system" role on OpenRouter free tier
-                if (model.includes("google") || model.includes("gemma") || model.includes("gemini")) {
-                    const systemPrompt = "You are a helpful assistant. ";
-                    const history = messages.map(m => ({ role: m.role, content: m.content }));
-
-                    if (history.length > 0 && history[0].role === 'user') {
-                        history[0].content = systemPrompt + history[0].content;
-                        apiMessages = [...history, userMessage];
-                    } else {
-                        // If no history or first msg isn't user (unlikely), just prepend system to current
-                        apiMessages = [...history, { role: 'user', content: systemPrompt + userMessage.content }];
-                    }
-                } else {
-                    // Standard behavior for Llama, Mistral, etc.
-                    apiMessages = [
-                        { role: "system", content: "You are a helpful assistant." },
-                        ...messages.map(m => ({ role: m.role, content: m.content })),
-                        userMessage
-                    ];
-                }
-
-                const response = await axios.post(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    {
-                        model: model,
-                        messages: apiMessages
-                    },
-                    {
-                        headers: {
-                            "Authorization": `Bearer ${apiKey}`,
-                            "Content-Type": "application/json",
-                            "HTTP-Referer": window.location.origin,
-                            "X-Title": "Mech Chatbot Standalone"
-                        }
-                    }
-                );
-
-                const botContent = response.data.choices?.[0]?.message?.content || "I couldn't generate a response.";
-                setMessages(prev => [...prev, { role: 'assistant', content: botContent }]);
-                setIsLoading(false);
-                return; // Success! Exit loop
-
-            } catch (error) {
-                console.warn(`Failed with ${model}:`, error.message);
-                if (error.response) {
-                    console.warn("Error details:", error.response.data);
-                }
-                lastError = error;
-                // Continue to next model
+            // Gemini requires history to start with 'user'
+            if (history.length > 0 && history[0].role === 'model') {
+                history = history.slice(1);
             }
-        }
 
-        // If loop finishes, all failed
-        console.error("All models failed:", lastError);
-        let msg = "All AI models are busy. Please try again later.";
-        if (lastError?.response?.status === 429) {
-            msg = "Rate limit reached on all free models. Please wait a moment.";
+            const chat = model.startChat({
+                history: history,
+            });
+
+            // Use sendMessageStream for typing effect
+            const result = await chat.sendMessageStream(input);
+
+            // Create a placeholder message for the assistant
+            setIsLoading(false); // Stop loading spinner as soon as stream starts
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+            let fullResponse = '';
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                fullResponse += chunkText;
+
+                // Update the last message with the new chunk
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    // Ensure we are updating the assistant's message
+                    if (lastMsg.role === 'assistant') {
+                        lastMsg.content = fullResponse;
+                    }
+                    return newMessages;
+                });
+            }
+
+        } catch (error) {
+            console.error("Gemini Error:", error);
+            setIsLoading(false);
+
+            let errorMessage = "Something went wrong. Please try again.";
+
+            if (error.message?.includes("API key")) {
+                errorMessage = "Invalid API Key. Please check your configuration.";
+            } else if (error.message?.includes("429")) {
+                errorMessage = "Too many requests. Please wait a moment.";
+            }
+
+            toast.error(errorMessage);
+            // Only add error message if we haven't started streaming yet (or just append it?)
+            // If we failed mid-stream, the user sees partial content which is fine.
+            // If we failed before start, add error msg.
+            setMessages(prev => {
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg.role === 'user') {
+                    return [...prev, { role: 'assistant', content: "Sorry, I encountered an error connecting to Google Gemini." }];
+                }
+                return prev;
+            });
         }
-        toast.error(msg);
-        setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting to the AI models right now." }]);
-        setIsLoading(false);
     };
 
     return (
@@ -127,7 +122,7 @@ function App() {
                     </div>
                     <div>
                         <h1 className="font-bold text-lg">Mech AI Assistant</h1>
-                        <p className="text-xs text-gray-400">Powered by Gemini 2.0</p>
+                        <p className="text-xs text-gray-400">Powered by Gemini Flash</p>
                     </div>
                 </div>
 
@@ -146,11 +141,38 @@ function App() {
                                     <span className="text-xs text-gray-400 capitalize">{msg.role}</span>
                                 </div>
 
-                                <div className={`p-4 rounded-2xl shadow-md ${msg.role === 'user'
+                                <div className={`p-4 rounded-2xl shadow-md overflow-hidden ${msg.role === 'user'
                                     ? 'bg-blue-600 text-white rounded-tr-none'
                                     : 'bg-slate-800 text-gray-100 rounded-tl-none border border-white/10'
                                     }`}>
-                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                                    {msg.role === 'user' ? (
+                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                                    ) : (
+                                        <div className="prose prose-invert prose-sm max-w-none">
+                                            <ReactMarkdown
+                                                children={msg.content}
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    code({ node, inline, className, children, ...props }) {
+                                                        const match = /language-(\w+)/.exec(className || '');
+                                                        return !inline && match ? (
+                                                            <SyntaxHighlighter
+                                                                children={String(children).replace(/\n$/, '')}
+                                                                style={atomDark}
+                                                                language={match[1]}
+                                                                PreTag="div"
+                                                                {...props}
+                                                            />
+                                                        ) : (
+                                                            <code className={`${className} bg-slate-700 px-1 py-0.5 rounded text-sm`} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
