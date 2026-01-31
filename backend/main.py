@@ -37,11 +37,12 @@ def get_db():
         db.close()
 
 # CORS Configuration
-origins = ["*"]
+# Allow all origins via regex to handle localhost ports and Vercel domains dynamically
+# while still supporting allow_credentials=True
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex="https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
