@@ -49,15 +49,34 @@ function App() {
         for (const model of modelsToTry) {
             try {
                 // console.log(`Attempting with model: ${model}`); // Optional debug
+
+                let apiMessages = [];
+                // Google models (Gemma/Gemini) often error with "system" role on OpenRouter free tier
+                if (model.includes("google") || model.includes("gemma") || model.includes("gemini")) {
+                    const systemPrompt = "You are a helpful assistant. ";
+                    const history = messages.map(m => ({ role: m.role, content: m.content }));
+
+                    if (history.length > 0 && history[0].role === 'user') {
+                        history[0].content = systemPrompt + history[0].content;
+                        apiMessages = [...history, userMessage];
+                    } else {
+                        // If no history or first msg isn't user (unlikely), just prepend system to current
+                        apiMessages = [...history, { role: 'user', content: systemPrompt + userMessage.content }];
+                    }
+                } else {
+                    // Standard behavior for Llama, Mistral, etc.
+                    apiMessages = [
+                        { role: "system", content: "You are a helpful assistant." },
+                        ...messages.map(m => ({ role: m.role, content: m.content })),
+                        userMessage
+                    ];
+                }
+
                 const response = await axios.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     {
                         model: model,
-                        messages: [
-                            { role: "system", content: "You are a helpful assistant." },
-                            ...messages.map(m => ({ role: m.role, content: m.content })),
-                            userMessage
-                        ]
+                        messages: apiMessages
                     },
                     {
                         headers: {
