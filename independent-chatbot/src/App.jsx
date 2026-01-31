@@ -1,31 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, LogOut } from 'lucide-react';
+import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
-import Login from './components/Login';
 
 function App() {
-    // Auth State
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    // Initial check for session
-    useEffect(() => {
-        const loggedIn = localStorage.getItem('teacher_auth') === 'true';
-        if (loggedIn) setIsAuthenticated(true);
-    }, []);
-
-    const handleLogin = () => {
-        localStorage.setItem('teacher_auth', 'true');
-        setIsAuthenticated(true);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('teacher_auth');
-        setIsAuthenticated(false);
-        setMessages([{ role: 'assistant', content: 'Hello! I am your AI assistant. How can I help you today?' }]);
-        toast.info("Logged out successfully");
-    };
-
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hello! I am your AI assistant. How can I help you today?' }
     ]);
@@ -136,15 +114,6 @@ function App() {
         setIsLoading(false);
     };
 
-    if (!isAuthenticated) {
-        return (
-            <>
-                <Toaster position="top-right" />
-                <Login onLogin={handleLogin} />
-            </>
-        );
-    }
-
     return (
         <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
             <Toaster position="top-right" />
@@ -152,24 +121,14 @@ function App() {
             <div className="flex-1 flex flex-col h-full relative max-w-4xl mx-auto w-full">
 
                 {/* Header */}
-                <div className="p-4 border-b border-white/10 flex items-center justify-between gap-3 bg-slate-950/50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Bot className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="font-bold text-lg">Mech AI Assistant</h1>
-                            <p className="text-xs text-slate-400">Teacher Access Enabled</p>
-                        </div>
+                <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-slate-950/50">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <Bot className="w-6 h-6 text-white" />
                     </div>
-
-                    <button
-                        onClick={handleLogout}
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-                        title="Logout"
-                    >
-                        <LogOut className="w-5 h-5" />
-                    </button>
+                    <div>
+                        <h1 className="font-bold text-lg">Mech AI Assistant</h1>
+                        <p className="text-xs text-gray-400">Powered by Gemini 2.0</p>
+                    </div>
                 </div>
 
                 {/* Messages */}
