@@ -9,6 +9,7 @@ function AuthModal({ isOpen, onClose, mode, role, onSwitchMode }) {
     name: '',
     email: '',
     password: '',
+    master_code: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -122,6 +123,21 @@ function AuthModal({ isOpen, onClose, mode, role, onSwitchMode }) {
                 placeholder="••••••••"
               />
             </div>
+
+            {role === 'teacher' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Teacher Master Code</label>
+                <input
+                  type="password"
+                  name="master_code"
+                  required
+                  value={formData.master_code}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-cyan-500 text-white placeholder-gray-500 transition-colors"
+                  placeholder="Enter Master Code"
+                />
+              </div>
+            )}
 
             <button
               type="submit"

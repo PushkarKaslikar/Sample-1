@@ -14,6 +14,9 @@ import os
 import shutil
 from typing import List, Optional
 
+# SECURITY: Master code for teacher access
+TEACHER_SECRET_CODE = "TEACHER_ACCESS_123"
+
 from database import SessionLocal, engine, Base
 import models
 
@@ -56,10 +59,12 @@ class UserRegister(BaseModel):
     email: str
     password: str
     role: str
+    master_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
     password: str
+    master_code: Optional[str] = None
 
 # Chat Bot Logic Removed (Moved to Frontend)
 
@@ -93,8 +98,16 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
-        
-        # Hash password
+
+        # Verify Teacher Secret Code
+        if user.role == "teacher":
+            if user.master_code != TEACHER_SECRET_CODE:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Invalid Teacher Secret Code"
+                )
+         
+         # Hash password
         hashed_password = get_password_hash(user.password)
         
         # Create new user
@@ -132,6 +145,14 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
+
+    # Verify Teacher Secret Code on Login as well
+    if db_user.role == "teacher":
+        if user.master_code != TEACHER_SECRET_CODE:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid Teacher Secret Code. Please enter the master code to log in."
+            )
         
     return db_user
 
