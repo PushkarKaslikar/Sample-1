@@ -15,7 +15,7 @@ import shutil
 from typing import List, Optional
 
 # SECURITY: Master code for teacher access
-TEACHER_SECRET_CODE = "TEACHER_ACCESS_123"
+TEACHER_SECRET_CODE = "Mechanical_Department_DKTE_1234"
 
 from database import SessionLocal, engine, Base
 import models
