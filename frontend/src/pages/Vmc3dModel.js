@@ -138,9 +138,7 @@ function Vmc3dModel() {
                         <iframe
                             title="CAMPRO Vertical Machining Center NV-1280"
                             frameBorder="0"
-                            allowFullScreen
-                            mozallowfullscreen="true"
-                            webkitallowfullscreen="true"
+
                             allow="autoplay; fullscreen; xr-spatial-tracking"
                             execution-while-out-of-viewport="true"
                             execution-while-not-rendered="true"
