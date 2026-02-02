@@ -1,12 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TOOLS } from './Tools';
+import { VMC_TOOLS } from './VmcTools';
 import { ArrowLeft } from 'lucide-react';
 
-function ToolDetail() {
+function VmcToolDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const tool = TOOLS.find(t => t.id === parseInt(id));
+    const tool = VMC_TOOLS.find(t => t.id === parseInt(id));
 
     if (!tool) {
         return <div className="text-white text-center mt-20">Tool not found</div>;
@@ -21,11 +21,11 @@ function ToolDetail() {
 
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate('/tools')}
+                    onClick={() => navigate('/vmc-tools')}
                     className="flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition-colors mb-8 group"
                 >
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    Back to Tools
+                    Back to VMC Tools
                 </button>
 
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm">
@@ -60,4 +60,4 @@ function ToolDetail() {
     );
 }
 
-export default ToolDetail;
+export default VmcToolDetail;

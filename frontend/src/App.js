@@ -13,6 +13,8 @@ import Chatbot from './pages/Chatbot';
 import Vmc3dModel from './pages/Vmc3dModel';
 import Tools from './pages/Tools';
 import ToolDetail from './pages/ToolDetail';
+import VmcTools from './pages/VmcTools';
+import VmcToolDetail from './pages/VmcToolDetail';
 
 
 
@@ -108,6 +110,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ToolDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vmc-tools"
+            element={
+              <ProtectedRoute>
+                <VmcTools />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vmc-tools/:id"
+            element={
+              <ProtectedRoute>
+                <VmcToolDetail />
               </ProtectedRoute>
             }
           />
