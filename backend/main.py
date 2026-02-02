@@ -48,6 +48,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:5173", # Vite default
         "http://127.0.0.1:5173", # Vite default
+        "https://mechtron.vercel.app", # Production Frontend
+        "https://sample-1-two.vercel.app", # Production Backend
     ],
     allow_origin_regex="https?://.*", # Keep regex as fallback/for Vercel
     allow_credentials=True,
