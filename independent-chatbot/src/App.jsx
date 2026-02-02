@@ -110,45 +110,62 @@ function App() {
     };
 
     return (
-        <div className="flex h-screen bg-slate-900 text-white overflow-hidden">
-            <Toaster position="top-right" />
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col h-full relative max-w-4xl mx-auto w-full">
+        <div className="flex h-screen bg-slate-900 text-white overflow-hidden relative selection:bg-blue-500/30">
+            {/* Background Gradient Effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-black pointer-events-none" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none mix-blend-screen animate-pulse" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none mix-blend-screen animate-pulse" />
 
-                {/* Header */}
-                <div className="p-4 border-b border-white/10 flex items-center gap-3 bg-slate-950/50">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                        <Bot className="w-6 h-6 text-white" />
+            <Toaster position="top-right" theme="dark" />
+
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col h-full relative z-10 max-w-5xl mx-auto w-full backdrop-blur-[2px]">
+
+                {/* Glass Header */}
+                <div className="px-6 py-4 flex items-center gap-4 border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
+                            <Bot className="w-7 h-7 text-white" />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-slate-900 rounded-full animate-bounce" />
                     </div>
                     <div>
-                        <h1 className="font-bold text-lg">Mech AI Assistant</h1>
-                        <p className="text-xs text-gray-400">Powered by Gemini Flash</p>
+                        <h1 className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-100 to-blue-300 bg-clip-text text-transparent">
+                            Mech AI Assistant
+                        </h1>
+                        <p className="text-xs text-blue-200/60 font-medium">Powered by Gemini Flash</p>
                     </div>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth">
+                {/* Messages Container */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
                     {messages.map((msg, idx) => (
                         <div
                             key={idx}
-                            className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex gap-4 animate-slide-up ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                <div className={`flex items-center gap-2 mb-1 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${msg.role === 'user' ? 'bg-blue-600' : 'bg-green-600'}`}>
-                                        {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                                    </div>
-                                    <span className="text-xs text-gray-400 capitalize">{msg.role}</span>
+                            {/* Avatar for Assistant */}
+                            {msg.role !== 'user' && (
+                                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex-shrink-0 flex items-center justify-center shadow-lg shadow-emerald-500/20 mt-1">
+                                    <Bot className="w-5 h-5 text-white" />
                                 </div>
+                            )}
 
-                                <div className={`p-4 rounded-2xl shadow-md overflow-hidden ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-slate-800 text-gray-100 rounded-tl-none border border-white/10'
-                                    }`}>
+                            {/* Message Bubble */}
+                            <div className={`flex flex-col max-w-[85%] md:max-w-[75%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                <div
+                                    className={`
+                                        px-5 py-3.5 shadow-lg backdrop-blur-sm
+                                        ${msg.role === 'user'
+                                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-sm'
+                                            : 'bg-slate-800/80 border border-white/10 text-slate-100 rounded-2xl rounded-tl-sm hover:bg-slate-800/90 transition-colors'
+                                        }
+                                    `}
+                                >
                                     {msg.role === 'user' ? (
-                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed text-[0.95rem]">{msg.content}</p>
                                     ) : (
-                                        <div className="prose prose-invert prose-sm max-w-none">
+                                        <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-slate-950/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl">
                                             <ReactMarkdown
                                                 children={msg.content}
                                                 remarkPlugins={[remarkGfm]}
@@ -161,10 +178,11 @@ function App() {
                                                                 style={atomDark}
                                                                 language={match[1]}
                                                                 PreTag="div"
+                                                                customStyle={{ margin: 0, background: 'transparent' }}
                                                                 {...props}
                                                             />
                                                         ) : (
-                                                            <code className={`${className} bg-slate-700 px-1 py-0.5 rounded text-sm`} {...props}>
+                                                            <code className={`${className} bg-slate-700/50 px-1.5 py-0.5 rounded text-sm text-blue-200 font-medium`} {...props}>
                                                                 {children}
                                                             </code>
                                                         );
@@ -174,46 +192,56 @@ function App() {
                                         </div>
                                     )}
                                 </div>
+                                <span className="text-[10px] text-gray-500 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {msg.role === 'user' ? 'You' : 'Assistant'}
+                                </span>
                             </div>
+
+                            {/* Avatar for User */}
+                            {msg.role === 'user' && (
+                                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-violet-600 flex-shrink-0 flex items-center justify-center shadow-lg shadow-blue-500/20 mt-1">
+                                    <User className="w-5 h-5 text-white" />
+                                </div>
+                            )}
                         </div>
                     ))}
+
+                    {/* Loading Indicator */}
                     {isLoading && (
-                        <div className="flex gap-4 justify-start">
-                            <div className="flex flex-col items-start">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-                                        <Bot className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs text-gray-400">Assistant</span>
-                                </div>
-                                <div className="bg-slate-800 text-gray-100 rounded-2xl rounded-tl-none border border-white/10 p-4">
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                </div>
+                        <div className="flex gap-4 justify-start animate-fade-in">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center mt-1">
+                                <Bot className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="bg-slate-800/80 border border-white/10 rounded-2xl rounded-tl-sm p-4 flex items-center gap-3 shadow-sm">
+                                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                                <span className="text-sm text-gray-400">Thinking...</span>
                             </div>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <div className="border-t border-white/10 bg-slate-950 p-4">
-                    <form onSubmit={handleSend} className="flex gap-4">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type your message..."
-                            className="flex-1 bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-500"
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            disabled={isLoading || !input.trim()}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 rounded-xl transition-colors flex items-center justify-center"
-                        >
-                            <Send className="w-5 h-5" />
-                        </button>
-                    </form>
+                {/* Floating Input Area */}
+                <div className="p-4 md:p-6 bg-transparent">
+                    <div className="max-w-4xl mx-auto bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl p-2 md:p-2.5 shadow-2xl shadow-blue-900/5">
+                        <form onSubmit={handleSend} className="flex gap-2 items-center">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="Ask me anything about engineering..."
+                                className="flex-1 bg-transparent border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:ring-0 focus:outline-none text-[0.95rem]"
+                                disabled={isLoading}
+                            />
+                            <button
+                                type="submit"
+                                disabled={isLoading || !input.trim()}
+                                className="bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white w-10 h-10 md:w-12 md:h-12 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg shadow-blue-500/25 active:scale-95"
+                            >
+                                <Send className="w-5 h-5 md:w-6 md:h-6" />
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
