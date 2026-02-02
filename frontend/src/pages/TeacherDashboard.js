@@ -89,7 +89,8 @@ function TeacherDashboard() {
         {/* Interactive Action Buttons */}
         {/* Interactive Action Buttons */}
         {/* Interactive Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-7xl">
+
 
           {/* Chatbot Button */}
           <button
@@ -124,8 +125,10 @@ function TeacherDashboard() {
             onClick={() => navigate('/vmc-3d')}
             className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-pink-400 hover:bg-pink-500/10 hover:shadow-2xl hover:shadow-pink-500/20 transform hover:-translate-y-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-pink-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            {/* Cog Icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-pink-400 transition-transform duration-300 group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               VMC 3D Model
@@ -141,6 +144,20 @@ function TeacherDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Upload Files</span>
+          </button>
+
+          {/* Tools Button (Moved and Styled) */}
+          <button
+            onClick={() => navigate('/tools')}
+            className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-2xl hover:shadow-cyan-500/20 transform hover:-translate-y-2"
+          >
+            {/* Wrench Compass Icon */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-cyan-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+            </svg>
+            <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Tools
+            </span>
           </button>
 
 

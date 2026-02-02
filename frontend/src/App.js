@@ -11,9 +11,11 @@ import TeacherFiles from './pages/TeacherFiles';
 import Lathe3DModel from './pages/Lathe3DModel';
 import Chatbot from './pages/Chatbot';
 import Vmc3dModel from './pages/Vmc3dModel';
+import Tools from './pages/Tools';
+import ToolDetail from './pages/ToolDetail';
 
 
-// Context and Constants
+
 export const AuthContext = createContext();
 export const API = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'; // Base URL for backend API
 
@@ -93,6 +95,22 @@ function App() {
           />
 
           {/* Shared Routes */}
+          <Route
+            path="/tools"
+            element={
+              <ProtectedRoute>
+                <Tools />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools/:id"
+            element={
+              <ProtectedRoute>
+                <ToolDetail />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/lathe-3d"
             element={

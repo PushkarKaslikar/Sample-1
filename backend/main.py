@@ -42,7 +42,14 @@ def get_db():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex="https?://.*",
+    # Explicitly allow the frontend origins
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173", # Vite default
+        "http://127.0.0.1:5173", # Vite default
+    ],
+    allow_origin_regex="https?://.*", # Keep regex as fallback/for Vercel
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -253,27 +260,37 @@ async def upload_file(
 
 @app.delete("/files/delete/{item_id}")
 async def delete_item(item_id: int, db: Session = Depends(get_db)):
-    # Recursive delete function
-    def delete_recursive(id):
-        children = db.query(models.DBFile).filter(models.DBFile.parent_id == id).all()
-        for child in children:
-            delete_recursive(child.id)
-        
-        item = db.query(models.DBFile).filter(models.DBFile.id == id).first()
-        if item:
-            db.delete(item)
-
-    item = db.query(models.DBFile).filter(models.DBFile.id == item_id).first()
-    if item:
-        # If it's a folder, delete children content first
-        if item.is_folder:
-            delete_recursive(item.id)
-        else:
-            db.delete(item)
+    try:
+        # Recursive delete function
+        def delete_recursive(id):
+            # Fetch children first
+            children = db.query(models.DBFile).filter(models.DBFile.parent_id == id).all()
+            for child in children:
+                delete_recursive(child.id)
             
-        db.commit()
-        return {"message": "Item deleted"}
-    raise HTTPException(status_code=404, detail="Item not found")
+            # Fetch item again to ensure it's attached/available
+            item = db.query(models.DBFile).filter(models.DBFile.id == id).first()
+            if item:
+                db.delete(item)
+                db.flush() # Force delete execution to respect order
+
+        item = db.query(models.DBFile).filter(models.DBFile.id == item_id).first()
+        if item:
+            # If it's a folder, delete children content first
+            if item.is_folder:
+                delete_recursive(item.id)
+            else:
+                db.delete(item)
+                
+            db.commit()
+            return {"message": "Item deleted"}
+        raise HTTPException(status_code=404, detail="Item not found")
+    except Exception as e:
+        print(f"Error deleting item {item_id}: {str(e)}")
+        # Print full traceback if possible or ensure it's visible
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/files/download/{item_id}")
 async def download_file(item_id: int, db: Session = Depends(get_db)):

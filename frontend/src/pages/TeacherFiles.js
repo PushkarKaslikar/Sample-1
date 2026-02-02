@@ -69,15 +69,27 @@ function TeacherFiles() {
     }
   };
 
-  const handleDelete = async (item) => {
-    if (window.confirm(`Delete "${item.name}"? ${item.is_folder ? '(and all contents)' : ''}`)) {
-      try {
-        await axios.delete(`${API}/files/delete/${item.id}`);
-        toast.info("Item deleted.");
-        fetchFiles();
-      } catch (error) {
-        toast.error('Failed to delete.');
-      }
+
+  /* Delete handling with custom modal */
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const handleDelete = (item) => {
+    setItemToDelete(item);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      await axios.delete(`${API}/files/delete/${itemToDelete.id}`);
+      toast.info("Item deleted.");
+      fetchFiles();
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      toast.error('Failed to delete.');
     }
   };
 
@@ -265,6 +277,33 @@ function TeacherFiles() {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && itemToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[#18181b] border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl transform scale-100 transition-all">
+              <h3 className="text-xl font-bold mb-4 text-white">Confirm Deletion</h3>
+              <p className="text-gray-300 mb-6">
+                Are you sure you want to delete <span className="font-bold text-white">"{itemToDelete.name}"</span>?
+                {itemToDelete.is_folder && <span className="block text-red-400 text-sm mt-2">Warning: This will delete the folder and all of its contents.</span>}
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-lg transition-colors border border-white/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors font-medium shadow-lg shadow-red-900/20"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
