@@ -31,7 +31,7 @@ function HomePage() {
     if (!video) return;
 
     video.muted = true;
-    video.play().catch(() => {});
+    video.play().catch(() => { });
   }, []);
 
   return (
@@ -47,9 +47,8 @@ function HomePage() {
           playsInline
           preload="metadata"
           onLoadedData={() => setVideoLoaded(true)}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-            videoLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
         >
           <source src="/videos/hero.mp4" type="video/mp4" />
         </video>
@@ -77,7 +76,7 @@ function HomePage() {
 
           <div className="flex justify-center gap-4 flex-wrap animate-fade-in-up delay-300">
             <button
-              onClick={() => openAuth('student', 'register')}
+              onClick={() => openAuth('student', 'login')}
               className="px-7 py-3 rounded-full bg-cyan-500 hover:bg-cyan-600
               shadow-xl shadow-cyan-500/30 transition-all duration-300
               hover:-translate-y-1"
