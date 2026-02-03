@@ -179,9 +179,9 @@ function HomePage() {
           </div>
         </div>
 
-        <p className="text-center mt-10 text-sm text-gray-500">
-          © 2024 Learning Platform
-        </p>
+        {/* <p className="text-center mt-10 text-sm text-gray-500">
+          © 2026 Learning Platform
+        </p> */}
       </footer>
 
       {/* ================= AUTH MODAL ================= */}
