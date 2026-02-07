@@ -135,6 +135,7 @@ function TeacherDashboard() {
             </span>
           </button>
 
+
           {/* Upload Files Button */}
           <button
             onClick={() => navigateTo('/teacher-files')}
@@ -171,6 +172,45 @@ function TeacherDashboard() {
             </svg>
             <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
               CNC Tools
+            </span>
+          </button>
+
+          {/* G Code and M code Button */}
+          <button
+            onClick={() => navigate('/g-m-codes')}
+            className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-lime-400 hover:bg-lime-500/10 hover:shadow-2xl hover:shadow-lime-500/20 transform hover:-translate-y-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-lime-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              G Code and M code
+            </span>
+          </button>
+
+          {/* CNC Control Panel Button */}
+          <button
+            onClick={() => navigate('/cnc-control-panel')}
+            className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-orange-400 hover:bg-orange-500/10 hover:shadow-2xl hover:shadow-orange-500/20 transform hover:-translate-y-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-orange-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              CNC Control Panel
+            </span>
+          </button>
+
+          {/* Nomenclature Button */}
+          <button
+            onClick={() => navigate('/nomenclature')}
+            className="group flex flex-col items-center justify-center space-y-4 p-8 bg-white/5 rounded-2xl border border-white/10 transition-all duration-300 ease-in-out h-64 hover:border-indigo-400 hover:bg-indigo-500/10 hover:shadow-2xl hover:shadow-indigo-500/20 transform hover:-translate-y-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-indigo-400 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span className="text-2xl font-semibold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Insert NOMENCLATURE
             </span>
           </button>
 

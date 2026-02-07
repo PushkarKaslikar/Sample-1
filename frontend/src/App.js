@@ -18,6 +18,11 @@ import VmcToolDetail from './pages/VmcToolDetail';
 
 
 
+import GMCodes from './pages/GMCodes';
+import CNCControlPanel from './pages/CNCControlPanel';
+import InsertNomenclature from './pages/InsertNomenclature';
+
+
 export const AuthContext = createContext();
 export const API = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'; // Base URL for backend API
 
@@ -150,6 +155,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Vmc3dModel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/g-m-codes"
+            element={
+              <ProtectedRoute>
+                <GMCodes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cnc-control-panel"
+            element={
+              <ProtectedRoute>
+                <CNCControlPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/nomenclature"
+            element={
+              <ProtectedRoute>
+                <InsertNomenclature />
               </ProtectedRoute>
             }
           />
