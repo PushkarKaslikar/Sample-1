@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../App';
 import { toast } from 'sonner';
 import Logo from '../components/Logo';
+import ChatbotBackground from '../components/ChatbotBackground';
 
 function TeacherDashboard() {
   const { user, logout } = useContext(AuthContext);
@@ -29,7 +30,8 @@ function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0b] via-[#111113] to-[#0a0a0b] text-white">
+    <div className="min-h-screen text-white relative">
+      <ChatbotBackground />
       {/* Header */}
       <nav
         data-testid="dashboard-nav"
@@ -38,7 +40,7 @@ function TeacherDashboard() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
-              <Logo className="w-10 h-10" />
+              <Logo className="w-14 h-14" />
               <span
                 className="text-xl font-bold"
                 style={{ fontFamily: 'Space Grotesk, sans-serif' }}

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../App';
+import ChatbotBackground from '../components/ChatbotBackground';
 
 function StudentFiles() {
   const [items, setItems] = useState([]);
@@ -81,7 +82,8 @@ function StudentFiles() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0b] via-[#111113] to-[#0a0a0b] text-white p-4 sm:p-8">
+    <div className="min-h-screen text-white p-4 sm:p-8 relative z-0">
+      <ChatbotBackground />
       <div className="container mx-auto max-w-5xl">
         <div className="mb-6 flex justify-between items-center">
           <Link to="/student-dashboard" className="text-cyan-400 hover:text-cyan-300 transition-colors flex items-center text-sm">

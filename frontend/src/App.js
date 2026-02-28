@@ -21,6 +21,7 @@ import VmcToolDetail from './pages/VmcToolDetail';
 import GMCodes from './pages/GMCodes';
 import CNCControlPanel from './pages/CNCControlPanel';
 import InsertNomenclature from './pages/InsertNomenclature';
+import AboutUs from './pages/AboutUs';
 
 
 export const AuthContext = createContext();
@@ -64,6 +65,7 @@ function App() {
         <Routes>
           {/* Public Route */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/about-us" element={<AboutUs />} />
 
           {/* Student Routes */}
           <Route

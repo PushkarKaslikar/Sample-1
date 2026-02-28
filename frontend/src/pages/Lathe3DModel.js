@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { AuthContext } from '../App';
+import ChatbotBackground from '../components/ChatbotBackground';
+import InteractiveCncImage from '../components/InteractiveCncImage';
 
 const LATHE_COMPONENTS = [
   {
@@ -117,7 +122,17 @@ const DONTS = [
 ];
 
 function Lathe3DModel() {
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const handleBack = () => {
+    if (user?.role === 'teacher') {
+      navigate('/teacher-dashboard');
+    } else {
+      navigate('/student-dashboard');
+    }
+  };
 
   const handleImageClick = (image) => {
     setSelectedImage(image);
@@ -128,8 +143,18 @@ function Lathe3DModel() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white overflow-y-auto">
+    <div className="min-h-screen text-white overflow-y-auto relative z-0">
+      <ChatbotBackground />
       <div className="container mx-auto px-4 py-8">
+
+        {/* Back Button */}
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition-colors mb-8 group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          Back to Dashboard
+        </button>
 
         {/* 3D Model Section */}
         <div className="w-full bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl mb-12">
@@ -153,6 +178,26 @@ function Lathe3DModel() {
               Turning Lathe CNC CORMAK
             </a> by <a href="https://sketchfab.com/omg3d" target="_blank" rel="noreferrer" className="text-cyan-400 font-semibold hover:underline">omg3d</a>
           </p>
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => navigate('/chatbot')}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/30 transition-all duration-300 hover:-translate-y-0.5"
+              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Go to Chatbot
+            </button>
+          </div>
+        </div>
+
+        {/* Interactive Image Section */}
+        <div className="mb-12">
+          <h2 className="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            Interactive Machine Explorer
+          </h2>
+          <InteractiveCncImage />
         </div>
 
         {/* Components Section */}

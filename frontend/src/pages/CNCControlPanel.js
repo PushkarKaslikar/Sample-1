@@ -2,6 +2,8 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../App';
+import ChatbotBackground from '../components/ChatbotBackground';
+import InteractiveCncControlPanelImage from '../components/InteractiveCncControlPanelImage';
 
 function CNCControlPanel() {
     const navigate = useNavigate();
@@ -18,21 +20,18 @@ function CNCControlPanel() {
     const controlFunctions = [
         { title: "Emergency Stop (E-STOP)", description: "The emergency stop button is used to immediately stop all machine operations in case of danger or emergency. It cuts power to machine movements and spindle to ensure operator safety." },
         { title: "Power ON / OFF", description: "These buttons are used to switch the CNC machine power ON or OFF. The machine must be powered ON before loading programs or operating the machine." },
-        { title: "Cycle Start", description: "The cycle start button is used to start or resume the CNC program. Once pressed, the machine begins executing the programmed machining operations." },
-        { title: "Feed Hold", description: "The feed hold button temporarily pauses the machine movement without stopping the spindle. It is used when the operator needs to inspect machining or make adjustments safely." },
         { title: "Spindle Start / Stop", description: "These buttons control the spindle rotation. Spindle start turns the spindle ON, while spindle stop turns it OFF. Proper spindle control is necessary for safe machining." },
         { title: "Jog Buttons (Axis Movement Keys)", description: "Jog buttons are used to manually move the machine axes (X, Y, Z) in small steps. They are mainly used for machine setup, tool positioning, and alignment." },
         { title: "Mode Selection Switch", description: "This switch is used to select machine operating modes such as: Manual Mode, Jog Mode, MDI Mode, Automatic Mode. Selecting the correct mode is essential for proper operation." },
-        { title: "MDI (Manual Data Input) Key", description: "MDI mode allows the operator to enter and execute single CNC commands directly. It is useful for testing movements and setting machine positions." },
         { title: "Program Edit Keys", description: "These keys are used to create, edit, or modify CNC programs. Operators can input G codes and M codes using the keypad." },
         { title: "Numeric & Alphanumeric Keypad", description: "The keypad is used to enter program numbers, coordinates, feed rates, spindle speeds, and commands. It functions like a keyboard for CNC programming." },
         { title: "Override Knobs (Feed / Spindle Override)", description: "Override knobs are used to increase or decrease feed rate and spindle speed during machining. This helps control cutting conditions without stopping the machine." },
-        { title: "Reset Button", description: "The reset button clears alarms, stops program execution, and resets the control system to a safe state." },
         { title: "Status Display Screen", description: "The screen displays machine coordinates, program status, alarms, tool offsets, and machining parameters. It helps the operator monitor and control the machining process." },
     ];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0b] text-white p-8 overflow-y-auto">
+        <div className="min-h-screen text-white p-8 overflow-y-auto relative z-0">
+            <ChatbotBackground />
             <div className="container mx-auto max-w-6xl">
                 {/* Back Button */}
                 <button
@@ -76,6 +75,23 @@ function CNCControlPanel() {
                         by <a href="https://sketchfab.com/HPrendering?utm_medium=embed&utm_campaign=share-popup&utm_content=3baed9ac58184563812f896612a45dc0" target="_blank" rel="nofollow" className="font-bold text-cyan-400 hover:text-cyan-300"> Vinny Passmore </a>
                         on <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=3baed9ac58184563812f896612a45dc0" target="_blank" rel="nofollow" className="font-bold text-cyan-400 hover:text-cyan-300">Sketchfab</a>
                     </p>
+                    <div className="flex justify-center mt-6">
+                        <button
+                            onClick={() => navigate('/chatbot')}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/30 transition-all duration-300 hover:-translate-y-0.5"
+                            style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                            Go to Chatbot
+                        </button>
+                    </div>
+                </div>
+
+                {/* Interactive Image Section */}
+                <div className="mb-12">
+                    <InteractiveCncControlPanelImage />
                 </div>
 
                 {/* Functions Grid */}

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { AuthContext } from '../App';
+import ChatbotBackground from '../components/ChatbotBackground';
 
 const TOOLS = [
     {
@@ -49,7 +50,8 @@ function Tools() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0b] text-white p-8 overflow-y-auto">
+        <div className="min-h-screen text-white p-8 overflow-y-auto relative z-0">
+            <ChatbotBackground />
             <div className="container mx-auto">
                 <button
                     onClick={handleBack}
