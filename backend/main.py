@@ -34,6 +34,30 @@ if 'files' in inspector.get_table_names():
             conn.commit()
             print("Migration: Added storage_path column to files table")
 
+# Auto-migration: copy existing users to students/teachers tables
+if 'users' in inspector.get_table_names():
+    db_session = SessionLocal()
+    try:
+        # Migrate students
+        existing_students = db_session.query(models.User).filter(models.User.role == "student").all()
+        for u in existing_students:
+            exists = db_session.query(models.Student).filter(models.Student.email == u.email).first()
+            if not exists:
+                db_session.add(models.Student(name=u.name, email=u.email, password_hash=u.password_hash))
+        # Migrate teachers
+        existing_teachers = db_session.query(models.User).filter(models.User.role == "teacher").all()
+        for u in existing_teachers:
+            exists = db_session.query(models.Teacher).filter(models.Teacher.email == u.email).first()
+            if not exists:
+                db_session.add(models.Teacher(name=u.name, email=u.email, password_hash=u.password_hash))
+        db_session.commit()
+        print("Migration: Copied existing users to students/teachers tables")
+    except Exception as e:
+        print(f"Migration note: {e}")
+        db_session.rollback()
+    finally:
+        db_session.close()
+
 app = FastAPI()
 
 # Password Hashing
@@ -128,72 +152,86 @@ def get_password_hash(password):
 # Auth Endpoints
 @app.post("/auth/register", response_model=UserResponse)
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    print(f"Attempting to register user: {user.email}") # Debug log
+    print(f"Attempting to register user: {user.email} as {user.role}")  # Debug log
     try:
-        # Check if user exists
-        db_user = db.query(models.User).filter(models.User.email == user.email).first()
-        if db_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-
-        # Verify Teacher Secret Code
         if user.role == "teacher":
+            # Verify Teacher Secret Code
             if user.master_code != TEACHER_SECRET_CODE:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Invalid Teacher Secret Code"
                 )
-         
-         # Hash password
-        hashed_password = get_password_hash(user.password)
-        
-        # Create new user
-        new_user = models.User(
-            name=user.name,
-            email=user.email,
-            password_hash=hashed_password,
-            role=user.role
-        )
-        
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        print(f"User registered successfully: {new_user.id}")
-        return new_user
+            # Check if email exists in teachers table
+            existing = db.query(models.Teacher).filter(models.Teacher.email == user.email).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered as teacher"
+                )
+            hashed_password = get_password_hash(user.password)
+            new_user = models.Teacher(
+                name=user.name,
+                email=user.email,
+                password_hash=hashed_password
+            )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            print(f"Teacher registered successfully: {new_user.id}")
+            return {"name": new_user.name, "email": new_user.email, "role": "teacher"}
+        else:
+            # Student registration
+            existing = db.query(models.Student).filter(models.Student.email == user.email).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered as student"
+                )
+            hashed_password = get_password_hash(user.password)
+            new_user = models.Student(
+                name=user.name,
+                email=user.email,
+                password_hash=hashed_password
+            )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            print(f"Student registered successfully: {new_user.id}")
+            return {"name": new_user.name, "email": new_user.email, "role": "student"}
     except Exception as e:
         print(f"Error during registration: {str(e)}")
-        # If it's already an HTTPException, re-raise it
         if isinstance(e, HTTPException):
             raise e
-        # Otherwise, 500
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
         )
 
 @app.post("/auth/login", response_model=UserResponse)
 async def login(user: UserLogin, db: Session = Depends(get_db)):
-    # Find user
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    
-    # Verify
-    if not db_user or not verify_password(user.password, db_user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-
-    # Verify Teacher Secret Code on Login as well
-    if db_user.role == "teacher":
+    if user.master_code:
+        # Teacher login
+        db_user = db.query(models.Teacher).filter(models.Teacher.email == user.email).first()
+        if not db_user or not verify_password(user.password, db_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
         if user.master_code != TEACHER_SECRET_CODE:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Invalid Teacher Secret Code. Please enter the master code to log in."
             )
-        
-    return db_user
+        return {"name": db_user.name, "email": db_user.email, "role": "teacher"}
+    else:
+        # Student login
+        db_user = db.query(models.Student).filter(models.Student.email == user.email).first()
+        if not db_user or not verify_password(user.password, db_user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        return {"name": db_user.name, "email": db_user.email, "role": "student"}
 
 from fastapi.responses import StreamingResponse
 import io

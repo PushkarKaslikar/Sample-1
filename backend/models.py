@@ -10,6 +10,22 @@ class User(Base):
     password_hash = Column(String)
     role = Column(String)
 
+class Student(Base):
+    __tablename__ = "students"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+
+class Teacher(Base):
+    __tablename__ = "teachers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+
 class DBFile(Base):
     __tablename__ = "files"
 
