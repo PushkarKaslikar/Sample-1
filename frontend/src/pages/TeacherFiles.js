@@ -50,9 +50,20 @@ function TeacherFiles() {
     }
   };
 
+  const MAX_FILE_SIZE_MB = 4;
+  const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // 4MB (Vercel limit is 4.5MB)
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
+      // Check file size before uploading (Vercel has a 4.5MB body limit)
+      if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        toast.error(`File is too large (${sizeMB} MB). Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`);
+        event.target.value = null;
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       if (currentFolder) {
@@ -64,7 +75,11 @@ function TeacherFiles() {
         toast.success(`File "${file.name}" uploaded.`);
         fetchFiles();
       } catch (error) {
-        toast.error(error.response?.data?.detail || 'File upload failed.');
+        if (error.response?.status === 413) {
+          toast.error('File is too large. Maximum upload size is 4 MB.');
+        } else {
+          toast.error(error.response?.data?.detail || 'File upload failed.');
+        }
       }
       event.target.value = null; // Reset input
     }
