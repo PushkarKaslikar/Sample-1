@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../App';
+import { supabase, STORAGE_BUCKET } from '../supabaseClient';
 import ChatbotBackground from '../components/ChatbotBackground';
 
 function TeacherFiles() {
@@ -50,13 +51,13 @@ function TeacherFiles() {
     }
   };
 
-  const MAX_FILE_SIZE_MB = 4;
-  const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // 4MB (Vercel limit is 4.5MB)
+  const MAX_FILE_SIZE_MB = 50;
+  const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // 50MB (Supabase free tier limit)
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Check file size before uploading (Vercel has a 4.5MB body limit)
+      // Check file size
       if (file.size > MAX_FILE_SIZE) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
         toast.error(`File is too large (${sizeMB} MB). Maximum allowed size is ${MAX_FILE_SIZE_MB} MB.`);
@@ -64,22 +65,38 @@ function TeacherFiles() {
         return;
       }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      if (currentFolder) {
-        formData.append('parent_id', currentFolder.id);
-      }
+      const toastId = toast.loading(`Uploading "${file.name}"...`);
 
       try {
-        await axios.post(`${API}/files/upload`, formData);
-        toast.success(`File "${file.name}" uploaded.`);
+        // Generate unique storage path
+        const parentPath = currentFolder ? `folder_${currentFolder.id}` : 'root';
+        const timestamp = Date.now();
+        const storagePath = `${parentPath}/${timestamp}_${file.name}`;
+
+        // Step 1: Upload file directly to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(storagePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Step 2: Register metadata with backend
+        await axios.post(`${API}/files/register`, {
+          filename: file.name,
+          content_type: file.type || 'application/octet-stream',
+          size: file.size,
+          storage_path: storagePath,
+          parent_id: currentFolder?.id || null
+        });
+
+        toast.success(`File "${file.name}" uploaded.`, { id: toastId });
         fetchFiles();
       } catch (error) {
-        if (error.response?.status === 413) {
-          toast.error('File is too large. Maximum upload size is 4 MB.');
-        } else {
-          toast.error(error.response?.data?.detail || 'File upload failed.');
-        }
+        console.error('Upload error:', error);
+        toast.error(error.message || 'File upload failed.', { id: toastId });
       }
       event.target.value = null; // Reset input
     }
@@ -99,7 +116,15 @@ function TeacherFiles() {
     if (!itemToDelete) return;
 
     try {
-      await axios.delete(`${API}/files/delete/${itemToDelete.id}`);
+      // Delete from backend (returns storage_paths for Supabase cleanup)
+      const response = await axios.delete(`${API}/files/delete/${itemToDelete.id}`);
+      
+      // Clean up files from Supabase Storage
+      const storagePaths = response.data?.storage_paths || [];
+      if (storagePaths.length > 0) {
+        await supabase.storage.from(STORAGE_BUCKET).remove(storagePaths);
+      }
+      
       toast.info("Item deleted.");
       fetchFiles();
       setDeleteModalOpen(false);
@@ -136,6 +161,19 @@ function TeacherFiles() {
 
   const handleDownload = async (item) => {
     try {
+      // If file has a Supabase storage path, use the public URL directly
+      if (item.storage_path) {
+        const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(item.storage_path);
+        const link = document.createElement('a');
+        link.href = data.publicUrl;
+        link.setAttribute('download', item.name);
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+      // Legacy: download from backend (files stored in database)
       const response = await axios.get(`${API}/files/download/${item.id}`, {
         responseType: 'blob'
       });

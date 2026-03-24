@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../App';
+import { supabase, STORAGE_BUCKET } from '../supabaseClient';
 import ChatbotBackground from '../components/ChatbotBackground';
 
 function StudentFiles() {
@@ -55,6 +56,19 @@ function StudentFiles() {
   const handleDownload = async (item) => {
     toast.info(`Starting download for "${item.name}"...`);
     try {
+      // If file has a Supabase storage path, use the public URL directly
+      if (item.storage_path) {
+        const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(item.storage_path);
+        const link = document.createElement('a');
+        link.href = data.publicUrl;
+        link.setAttribute('download', item.name);
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+      // Legacy: download from backend (files stored in database)
       const response = await axios.get(`${API}/files/download/${item.id}`, {
         responseType: 'blob'
       });

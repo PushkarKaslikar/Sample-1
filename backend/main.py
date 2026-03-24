@@ -23,6 +23,17 @@ import models
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+# Auto-migration: add storage_path column if it doesn't exist
+from sqlalchemy import inspect, text
+inspector = inspect(engine)
+if 'files' in inspector.get_table_names():
+    columns = [col['name'] for col in inspector.get_columns('files')]
+    if 'storage_path' not in columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE files ADD COLUMN storage_path VARCHAR"))
+            conn.commit()
+            print("Migration: Added storage_path column to files table")
+
 app = FastAPI()
 
 # Password Hashing
@@ -193,6 +204,13 @@ class FolderCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
 
+class FileRegister(BaseModel):
+    filename: str
+    content_type: str
+    size: int
+    storage_path: str
+    parent_id: Optional[int] = None
+
 # File/Folder Endpoints
 
 @app.get("/files/list")
@@ -204,7 +222,8 @@ async def list_files(parent_id: Optional[int] = None, db: Session = Depends(get_
         models.DBFile.size, 
         models.DBFile.content_type,
         models.DBFile.is_folder,
-        models.DBFile.parent_id
+        models.DBFile.parent_id,
+        models.DBFile.storage_path
     ).filter(models.DBFile.parent_id == parent_id).all()
     
     item_list = []
@@ -228,7 +247,8 @@ async def list_files(parent_id: Optional[int] = None, db: Session = Depends(get_
             "size": size_str,
             "type": type_str,
             "is_folder": f.is_folder,
-            "parent_id": f.parent_id
+            "parent_id": f.parent_id,
+            "storage_path": f.storage_path
         })
     return item_list
 
@@ -278,6 +298,34 @@ async def upload_file(
     
     return {"filename": file.filename}
 
+# New endpoint: Register file metadata after Supabase upload
+@app.post("/files/register")
+async def register_file(file_data: FileRegister, db: Session = Depends(get_db)):
+    # Check if exists in this specific folder
+    existing_file = db.query(models.DBFile).filter(
+        models.DBFile.filename == file_data.filename,
+        models.DBFile.parent_id == file_data.parent_id
+    ).first()
+    
+    if existing_file:
+        db.delete(existing_file)
+        db.commit()
+    
+    new_file = models.DBFile(
+        filename=file_data.filename,
+        content_type=file_data.content_type,
+        size=file_data.size,
+        data=None,  # No binary data - file is in Supabase
+        parent_id=file_data.parent_id,
+        is_folder=False,
+        storage_path=file_data.storage_path
+    )
+    db.add(new_file)
+    db.commit()
+    db.refresh(new_file)
+    
+    return {"id": new_file.id, "filename": new_file.filename, "storage_path": new_file.storage_path}
+
 @app.delete("/files/delete/{item_id}")
 async def delete_item(item_id: int, db: Session = Depends(get_db)):
     try:
@@ -296,6 +344,17 @@ async def delete_item(item_id: int, db: Session = Depends(get_db)):
 
         item = db.query(models.DBFile).filter(models.DBFile.id == item_id).first()
         if item:
+            # Collect storage paths for Supabase cleanup
+            storage_paths = []
+            def collect_paths(id):
+                f = db.query(models.DBFile).filter(models.DBFile.id == id).first()
+                if f and f.storage_path:
+                    storage_paths.append(f.storage_path)
+                children = db.query(models.DBFile).filter(models.DBFile.parent_id == id).all()
+                for child in children:
+                    collect_paths(child.id)
+            collect_paths(item.id)
+            
             # If it's a folder, delete children content first
             if item.is_folder:
                 delete_recursive(item.id)
@@ -303,7 +362,7 @@ async def delete_item(item_id: int, db: Session = Depends(get_db)):
                 db.delete(item)
                 
             db.commit()
-            return {"message": "Item deleted"}
+            return {"message": "Item deleted", "storage_paths": storage_paths}
         raise HTTPException(status_code=404, detail="Item not found")
     except Exception as e:
         print(f"Error deleting item {item_id}: {str(e)}")
@@ -316,11 +375,17 @@ async def delete_item(item_id: int, db: Session = Depends(get_db)):
 async def download_file(item_id: int, db: Session = Depends(get_db)):
     db_file = db.query(models.DBFile).filter(models.DBFile.id == item_id).first()
     if db_file and not db_file.is_folder:
-        return StreamingResponse(
-            io.BytesIO(db_file.data), 
-            media_type=db_file.content_type,
-            headers={"Content-Disposition": f"attachment; filename={db_file.filename}"}
-        )
+        # If file is stored in Supabase, return the public URL
+        if db_file.storage_path:
+            supabase_url = f"https://zqosvmefhfutzwexusbu.supabase.co/storage/v1/object/public/uploads/{db_file.storage_path}"
+            return {"url": supabase_url, "filename": db_file.filename}
+        # Legacy: file stored in database
+        if db_file.data:
+            return StreamingResponse(
+                io.BytesIO(db_file.data), 
+                media_type=db_file.content_type,
+                headers={"Content-Disposition": f"attachment; filename={db_file.filename}"}
+            )
     raise HTTPException(status_code=404, detail="File not found or is a folder")
 
 if __name__ == "__main__":

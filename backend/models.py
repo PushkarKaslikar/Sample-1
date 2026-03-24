@@ -17,9 +17,12 @@ class DBFile(Base):
     filename = Column(String, index=True)
     content_type = Column(String)
     size = Column(Integer)
-    data = Column(LargeBinary)
+    data = Column(LargeBinary, nullable=True)  # Nullable for Supabase-stored files
     
     # New columns for folder structure
     is_folder = Column(Boolean, default=False)
     parent_id = Column(Integer, ForeignKey('files.id'), nullable=True)
+    
+    # Supabase Storage path (e.g., "folder_id/filename.pdf")
+    storage_path = Column(String, nullable=True)
 
