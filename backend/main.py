@@ -1,12 +1,12 @@
 # VERSION: 2.0-NO-REQUESTS
-from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body
+from fastapi import FastAPI, HTTPException, status, UploadFile, File, Depends, Body, Request
 
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
@@ -37,25 +37,43 @@ def get_db():
         db.close()
 
 # CORS Configuration
-# Allow all origins via regex to handle localhost ports and Vercel domains dynamically
-# while still supporting allow_credentials=True
+
 
 app.add_middleware(
     CORSMiddleware,
-    # Explicitly allow the frontend origins
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://localhost:5173", # Vite default
-        "http://127.0.0.1:5173", # Vite default
-        "https://mechtron.vercel.app", # Production Frontend
-        "https://sample-1-two.vercel.app", # Production Backend
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://mechtron.vercel.app",
+        "https://sample-1-two.vercel.app",
     ],
-    allow_origin_regex="https?://.*", # Keep regex as fallback/for Vercel
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Explicit OPTIONS handler for Vercel serverless compatibility
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str, request: Request):
+    response = Response(status_code=204)
+    origin = request.headers.get("origin", "")
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://mechtron.vercel.app",
+        "https://sample-1-two.vercel.app",
+    ]
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    return response
 
 @app.on_event("startup")
 async def startup_event():
