@@ -84,7 +84,7 @@ const TEAM_MEMBERS = [
         color: 'from-purple-500 to-pink-600',
         glowColor: 'rgba(168, 85, 247, 0.4)',
         borderColor: 'border-purple-500/30',
-        role: '3D Modelling & Design'
+        role: 'Website Designer'
     },
     {
         name: 'Ajay S. Powar',
@@ -95,7 +95,7 @@ const TEAM_MEMBERS = [
         color: 'from-emerald-500 to-teal-600',
         glowColor: 'rgba(52, 211, 153, 0.4)',
         borderColor: 'border-emerald-500/30',
-        role: 'Research & Content'
+        role: '3D Model Finding'
     },
     {
         name: 'Shoaib A. Shikalgar',
@@ -106,7 +106,7 @@ const TEAM_MEMBERS = [
         color: 'from-amber-500 to-orange-600',
         glowColor: 'rgba(245, 158, 11, 0.4)',
         borderColor: 'border-amber-500/30',
-        role: 'UI/UX & Documentation'
+        role: 'Database & Documentation'
     }
 ];
 
