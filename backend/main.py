@@ -233,6 +233,60 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
             )
         return {"name": db_user.name, "email": db_user.email, "role": "student"}
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    model: Optional[str] = "meta-llama/llama-3.2-3b-instruct:free"
+
+@app.post("/api/chat")
+def chat_proxy(chat_req: ChatRequest):
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Server misconfiguration: OpenRouter API Key is missing")
+
+    api_key = api_key.strip().replace('"', '').replace("'", "")
+
+    import requests
+    import json
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://mechtron.vercel.app",
+        "X-Title": "Mech AI Assistant"
+    }
+
+    payload = {
+        "model": chat_req.model,
+        "messages": [{"role": m.role, "content": m.content} for m in chat_req.messages],
+        "stream": True
+    }
+
+    def generate():
+        try:
+            with requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                stream=True,
+                timeout=30
+            ) as r:
+                if r.status_code != 200:
+                    yield f"data: {json.dumps({'error': f'OpenRouter returned status code {r.status_code}: {r.text}'})}\n\n"
+                    return
+                for line in r.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        yield f"{decoded_line}\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
 from fastapi.responses import StreamingResponse
 import io
 from fastapi import Form

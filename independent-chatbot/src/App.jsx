@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -25,11 +24,12 @@ function App() {
 
     const handleSend = async (e) => {
         e.preventDefault();
-        if (!input.trim()) return;
+        // Crucial fix: Prevent double submissions if already loading/thinking
+        if (!input.trim() || isLoading) return;
 
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         if (!apiKey) {
-            toast.error("API Key is missing. Please check .env file.");
+            toast.error("OpenRouter API Key (VITE_OPENROUTER_API_KEY) is missing in your .env file.");
             return;
         }
 
@@ -39,70 +39,109 @@ function App() {
         setIsLoading(true);
 
         try {
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-            // Convert history to Gemini format
-            let history = messages
-                .filter(m => m.role !== 'system')
-                .map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
-
-            // Gemini requires history to start with 'user'
-            if (history.length > 0 && history[0].role === 'model') {
-                history = history.slice(1);
-            }
-
-            const chat = model.startChat({
-                history: history,
+            // OPENROUTER SSE STREAMING DIRECT TO THE BROWSER (No CORS issues)
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey.replace(/['"]+/g, '').trim()}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "Mech AI Assistant"
+                },
+                body: JSON.stringify({
+                    model: "nvidia/nemotron-3-ultra-550b-a55b:free",
+                    messages: [
+                        ...messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content })),
+                        userMessage
+                    ],
+                    stream: true
+                })
             });
 
-            // Use sendMessageStream for typing effect
-            const result = await chat.sendMessageStream(input);
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Request failed: ${response.status} - ${errText}`);
+            }
 
-            // Create a placeholder message for the assistant
-            setIsLoading(false); // Stop loading spinner as soon as stream starts
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            // Append assistant placeholder bubble
             setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
             let fullResponse = '';
-            for await (const chunk of result.stream) {
-                const chunkText = chunk.text();
-                fullResponse += chunkText;
+            let buffer = '';
 
-                // Update the last message with the new chunk
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    setIsLoading(false);
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    
+                    if (trimmed.startsWith('data: ')) {
+                        const dataStr = trimmed.slice(6).trim();
+                        if (dataStr === '[DONE]') {
+                            break;
+                        }
+                        try {
+                            const parsed = JSON.parse(dataStr);
+                            if (parsed.error) {
+                                throw new Error(parsed.error);
+                            }
+                            const text = parsed.choices?.[0]?.delta?.content || '';
+                            fullResponse += text;
+
+                            setMessages(prev => {
+                                const newMessages = [...prev];
+                                const lastMsg = newMessages[newMessages.length - 1];
+                                if (lastMsg.role === 'assistant') {
+                                    lastMsg.content = fullResponse;
+                                }
+                                return newMessages;
+                            });
+                        } catch (e) {
+                            // Ignore partial line parses
+                        }
+                    }
+                }
+            }
+
+            // Fallback if model responded with completely empty content (e.g. on brief acknowledgments)
+            if (!fullResponse.trim()) {
                 setMessages(prev => {
                     const newMessages = [...prev];
                     const lastMsg = newMessages[newMessages.length - 1];
-                    // Ensure we are updating the assistant's message
-                    if (lastMsg.role === 'assistant') {
-                        lastMsg.content = fullResponse;
+                    if (lastMsg.role === 'assistant' && !lastMsg.content) {
+                        lastMsg.content = "*(Acknowledged)*";
                     }
                     return newMessages;
                 });
             }
 
         } catch (error) {
-            console.error("Gemini Error:", error);
+            console.error("AI Generation Error:", error);
             setIsLoading(false);
 
-            let errorMessage = "Something went wrong. Please try again.";
-
-            if (error.message?.includes("API key")) {
-                errorMessage = "Invalid API Key. Please check your configuration.";
-            } else if (error.message?.includes("429")) {
-                errorMessage = "Too many requests. Please wait a moment.";
-            }
-
+            let errorMessage = error.message || "Something went wrong. Please try again.";
             toast.error(errorMessage);
-            // Only add error message if we haven't started streaming yet (or just append it?)
-            // If we failed mid-stream, the user sees partial content which is fine.
-            // If we failed before start, add error msg.
+
             setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg.role === 'user') {
-                    return [...prev, { role: 'assistant', content: "Sorry, I encountered an error connecting to Google Gemini." }];
+                    return [...prev, { role: 'assistant', content: `Sorry, I encountered an error: ${errorMessage}` }];
+                }
+                if (lastMsg.role === 'assistant' && !lastMsg.content) {
+                    lastMsg.content = `Sorry, I encountered an error: ${errorMessage}`;
+                    return [...prev];
                 }
                 return prev;
             });
@@ -122,18 +161,20 @@ function App() {
             <div className="flex-1 flex flex-col h-full relative z-10 max-w-5xl mx-auto w-full backdrop-blur-[2px]">
 
                 {/* Glass Header */}
-                <div className="px-6 py-4 flex items-center gap-4 border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
-                    <div className="relative">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
-                            <Bot className="w-7 h-7 text-white" />
+                <div className="px-6 py-4 flex items-center justify-between border-b border-white/5 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
+                                <Bot className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-slate-900 rounded-full animate-bounce" />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-slate-900 rounded-full animate-bounce" />
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-100 to-blue-300 bg-clip-text text-transparent">
-                            Mech AI Assistant
-                        </h1>
-                        <p className="text-xs text-blue-200/60 font-medium">Powered by Gemini Flash</p>
+                        <div>
+                            <h1 className="font-bold text-xl tracking-tight bg-gradient-to-r from-blue-100 to-blue-300 bg-clip-text text-transparent">
+                                Mech AI Assistant
+                            </h1>
+                            <p className="text-xs text-blue-200/60 font-medium">Powered by Nvidia Nemotron</p>
+                        </div>
                     </div>
                 </div>
 
@@ -165,31 +206,38 @@ function App() {
                                     {msg.role === 'user' ? (
                                         <p className="whitespace-pre-wrap leading-relaxed text-[0.95rem]">{msg.content}</p>
                                     ) : (
-                                        <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-slate-950/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl">
-                                            <ReactMarkdown
-                                                children={msg.content}
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    code({ node, inline, className, children, ...props }) {
-                                                        const match = /language-(\w+)/.exec(className || '');
-                                                        return !inline && match ? (
-                                                            <SyntaxHighlighter
-                                                                children={String(children).replace(/\n$/, '')}
-                                                                style={atomDark}
-                                                                language={match[1]}
-                                                                PreTag="div"
-                                                                customStyle={{ margin: 0, background: 'transparent' }}
-                                                                {...props}
-                                                            />
-                                                        ) : (
-                                                            <code className={`${className} bg-slate-700/50 px-1.5 py-0.5 rounded text-sm text-blue-200 font-medium`} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                        </div>
+                                        msg.content ? (
+                                            <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-slate-950/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl">
+                                                <ReactMarkdown
+                                                    children={msg.content}
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        code({ node, inline, className, children, ...props }) {
+                                                            const match = /language-(\w+)/.exec(className || '');
+                                                            return !inline && match ? (
+                                                                <SyntaxHighlighter
+                                                                    children={String(children).replace(/\n$/, '')}
+                                                                    style={atomDark}
+                                                                    language={match[1]}
+                                                                    PreTag="div"
+                                                                    customStyle={{ margin: 0, background: 'transparent' }}
+                                                                    {...props}
+                                                                />
+                                                            ) : (
+                                                                <code className={`${className} bg-slate-700/50 px-1.5 py-0.5 rounded text-sm text-blue-200 font-medium`} {...props}>
+                                                                    {children}
+                                                                </code>
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-slate-400 py-1 min-w-[100px]">
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                                                <span className="text-xs font-semibold italic animate-pulse">Thinking...</span>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                                 <span className="text-[10px] text-gray-500 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -206,8 +254,8 @@ function App() {
                         </div>
                     ))}
 
-                    {/* Loading Indicator */}
-                    {isLoading && (
+                    {/* Loading Indicator (Only shown before assistant bubble is created) */}
+                    {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
                         <div className="flex gap-4 justify-start animate-fade-in">
                             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center mt-1">
                                 <Bot className="w-5 h-5 text-white" />
